@@ -3,9 +3,9 @@ int b = a + 7;
 
 char str[5] = "abcdefdsadsdas";
 
-int v[20] = {5 + 7,6 / 2,a,b,9};
+int v[20] = {5 + 7,6 / 2,a,b + 6,9};
 
-int    c     ;
+int    c   = 10000  ;
 int  d  ;
 
 d = a + b;; ; ;

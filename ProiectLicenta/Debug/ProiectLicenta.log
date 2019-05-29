@@ -1,5 +1,4 @@
-﻿  pch.cpp
-  ProiectLicenta.cpp
+﻿  ProiectLicenta.cpp
 c:\users\teo\desktop\proiectlicenta\proiectlicenta\stringhelper.h(99): warning C4018: '<': signed/unsigned mismatch
 c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(93): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
 c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(41): warning C4715: 'Expression::applyOp': not all control paths return a value

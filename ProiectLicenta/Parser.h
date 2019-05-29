@@ -86,7 +86,7 @@ namespace Parser
 
 	
 	//Store initialized and maybe declared variables in a map of variables
-	int parseVarInit(const Type& varType, const std::string& str, std::unordered_map<std::string, Var>& varMap)
+	int parseVarDecl(const Type& varType, const std::string& str, std::unordered_map<std::string, Var>& varMap)
 	{
 
 		size_t pos = 0, lastpos = 0;
@@ -260,7 +260,11 @@ namespace Parser
 									auxVar.min = values[i].min;
 									auxVar.max = values[i].max;
 									auxVar.name = arrayName + StringHelper::addBrackets(i);
-									varMap[auxVar.name] = auxVar;
+									varMap[auxVar.name] = { varType.min, varType.max, varType.min, varType.max, auxVar.name };
+									if (sERROR == attribute(auxVar, varMap[auxVar.name]))
+									{
+										OVERFLOWLOG("Value overflow when attributing result to variable " + auxVar.name);
+									}
 								}
 
 								auxVar.min = varType.min;
@@ -290,6 +294,8 @@ namespace Parser
 				}
 				else if(str[pos] == '=')
 				{
+					ERRORLOGRETURN(varMap.find(varName) == varMap.end(), "Variable " + varName + " already initialized", sERROR);
+					varMap[varName] = { varType.min, varType.max, varType.min, varType.max, varName };
 					Var evl;
 					evl.name = varName;
 					++pos;
@@ -302,14 +308,10 @@ namespace Parser
 					{
 						ERRORLOGRETURN(sSUCCESS == Expression::evaluate(auxStr, varMap, evl), "Can't evaluate expression: " + auxStr, sERROR);
 
-						ERRORLOGRETURN(varMap.find(varName) == varMap.end(), "variable " + varName + " already initialized", sERROR);
-
-						evl.limMin = varType.min;
-						evl.limMax = varType.max;
-
-						varMap[varName] = evl;
-
-
+						if (sERROR == attribute(evl, varMap[varName]))
+						{
+							OVERFLOWLOG("Value overflow when attributing result to variable " + varName);
+						}
 					}
 				}
 				else
@@ -324,6 +326,8 @@ namespace Parser
 	
 	}
 	
+
+	//Modify variable value in the map of variables
 	int parseVarAttr(const std::string& str, std::unordered_map<std::string, Var>& varMap)
 	{
 		size_t pos = 0, lastpos = 0;
@@ -367,7 +371,9 @@ namespace Parser
 		return sSUCCESS;
 	}
 
-	bool isInitializationLine(const std::string& strLine)
+
+	//Verify if the line of code is a declaration line (with or without initialization)
+	bool isDeclarationLine(const std::string& strLine)
 	{
 		size_t pos = 0, lastpos = 0;
 		std::string str;
@@ -383,6 +389,7 @@ namespace Parser
 		return (keyTypes.find(str) != keyTypes.end());
 	}
 	
+	//Verify if the line of code is a line in which we attribute a value to the element
 	bool isAttributionLine(const std::string& strLine)
 	{
 		size_t pos = 0, lastpos = 0;

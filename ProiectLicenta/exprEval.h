@@ -42,7 +42,7 @@ namespace Expression
 
 
 	// Function that returns value of
-	// expression after evaluation.
+	// expression after evaluation to parameter outputValue.
 	int evaluate(const std::string& tokens, std::unordered_map<std::string, Var>& varMap, Var& outputValue)
 	{
 		Var auxVal;

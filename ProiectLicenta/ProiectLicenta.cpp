@@ -31,12 +31,15 @@ int main()
 		++lineInFile;
 		Parser::overflow = false;
 
+
+		//Stergere spatii goale de la inceputul si finalul randului
 		StringHelper::removeFromBeginOfStr(strLine, " ;\r\n");
 		StringHelper::removeFromEndOfStr(strLine, " \r\n");
 		if (strLine.empty())
 			continue;
 
-		if (sTRUE == Parser::isInitializationLine(strLine))
+
+		if (sTRUE == Parser::isDeclarationLine(strLine))
 		{
 
 			pos = strLine.find(' ');
@@ -45,7 +48,7 @@ int main()
 			pos = strLine.find_first_not_of(" ", pos);
 			str = strLine.substr(pos);
 
-			ERRORLOGCONTINUE(sSUCCESS == Parser::parseVarInit(Parser::typeMap[typeStr], str, Parser::varMap),
+			ERRORLOGCONTINUE(sSUCCESS == Parser::parseVarDecl(Parser::typeMap[typeStr], str, Parser::varMap),
 				"parseVarInit error on row " + std::to_string(i));
 
 		}
@@ -58,20 +61,14 @@ int main()
 
 		}
 
-		if (Parser::overflow == true)
-		{
-			//Overflow at line i
-		}
-
 	}
 
+	//for loop to see the range of all variables declared in the program
 	for (auto it = Parser::varMap.begin(); it != Parser::varMap.end(); ++it)
 	{
 		std::cout << it->first << " " << it->second.min << " " << it->second.max << '\n';
 	}
-
-
-
+	//Print all the overflows found in the code
 	SHOWOVERFLOWS();
 
 	return sSUCCESS;
