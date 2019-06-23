@@ -5,19 +5,13 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <utility>
 
 #include "ErrorLog.h"
 
-struct Type{
+struct DataType{
 	long long min, max;
 	std::string name;
-	Type(long long x)
-	{
-		min = x;
-		max = x;
-		name = "";
-	}
-	Type() {}
 };
 
 struct Var{
@@ -28,7 +22,7 @@ struct Var{
 
 struct Array {
 	size_t nrElem;
-	std::string nume;
+	std::string name;
 };
 
 bool initialized(const Var& x)
@@ -73,12 +67,12 @@ int attribute(const Var& base, Var& dest)
 	
 }*/
 
-bool operator == (const Type& a, const Type& b)
+bool operator == (const DataType& a, const DataType& b)
 {
 	return (a.min == b.min and a.max == b.max and a.name == b.name);
 }
 
-bool operator != (const Type& a, const Type& b)
+bool operator != (const DataType& a, const DataType& b)
 {
 	return !(a.min == b.min and a.max == b.max and a.name == b.name);
 }
@@ -91,6 +85,8 @@ Var operator + (const Var& a, const Var& b)
 	aux.max = a.max + b.max;
 	return aux;
 }
+
+
 
 Var operator - (const Var& a, const Var& b)
 {
@@ -139,6 +135,165 @@ Var operator / (const Var& a, const Var& b)
 		aux.max = std::max(max1, max2);
 
 		return aux;
+}
+
+
+std::pair<Var, Var> operator == (const Var& a, const long long& b)
+{
+	Var posInterval, negInterval;
+
+	if (a.min == b && a.max == b)
+	{
+		posInterval.limMin = a.limMin;
+		posInterval.limMax = a.limMax;
+		posInterval.min = a.min;
+		posInterval.max = a.max;
+		negInterval.limMin = 0;
+		negInterval.limMax = 0;
+		negInterval.min = 0;
+		negInterval.max = 0;
+	}
+	else if (a.min == b)
+	{
+		posInterval.limMin = a.limMin;
+		posInterval.limMax = a.limMax;
+		posInterval.min = b;
+		posInterval.max = b;
+		negInterval.limMin = a.limMin;
+		negInterval.limMax = a.limMax;
+		negInterval.min = a.min + 1;
+		negInterval.max = a.max;
+	}
+	else if (a.max == b)
+	{
+		posInterval.limMin = a.limMin;
+		posInterval.limMax = a.limMax;
+		posInterval.min = b;
+		posInterval.max = b;
+		negInterval.limMin = a.limMin;
+		negInterval.limMax = a.limMax;
+		negInterval.min = a.min;
+		negInterval.max = a.max - 1;
+	}
+	else if (b > a.min && b < a.max)
+	{
+		posInterval.limMin = a.limMin;
+		posInterval.limMax = a.limMax;
+		posInterval.min = b;
+		posInterval.max = b;
+		negInterval.limMin = a.limMin;
+		negInterval.limMax = a.limMax;
+		negInterval.min = a.min;
+		negInterval.max = a.max;
+	}
+	else
+	{
+		posInterval.limMin = 0;
+		posInterval.limMax = 0;
+		posInterval.min = 0;
+		posInterval.max = 0;
+		negInterval.limMin = a.limMin;
+		negInterval.limMax = a.limMax;
+		negInterval.min = a.min;
+		negInterval.max = a.max;
+	}
+	return std::pair<Var, Var>(posInterval, negInterval);
+}
+
+std::pair<Var, Var> operator != (const Var& a, const long long& b)
+{
+	std::pair<Var, Var> eqResult = (a == b);
+	return std::pair<Var, Var>(eqResult.second, eqResult.first);
+}
+
+std::pair<Var, Var> operator < (const Var& a, const long long& b)
+{
+	Var posInterval, negInterval;
+	if (a.max < b)
+	{
+		posInterval.limMax = a.limMax;
+		posInterval.limMin = a.limMin;
+		posInterval.max = a.max;
+		posInterval.min = a.min;
+		negInterval.limMax = 0;
+		negInterval.limMin = 0;
+		negInterval.min = 0;
+		negInterval.max = 0;
+	}
+	else if (a.min >= b)
+	{
+		negInterval.limMax = a.limMax;
+		negInterval.limMin = a.limMin;
+		negInterval.max = a.max;
+		negInterval.min = a.min;
+		posInterval.limMax = 0;
+		posInterval.limMin = 0;
+		posInterval.min = 0;
+		posInterval.max = 0;
+	}
+	else
+	{
+		posInterval.limMax = a.limMax;
+		posInterval.limMin = a.limMin;
+		posInterval.max = b - 1;
+		posInterval.min = a.min;
+		negInterval.limMax = a.limMax;
+		negInterval.limMin = a.limMin;
+		negInterval.min = b;
+		negInterval.max = a.max;
+	}
+	return std::pair<Var, Var>(posInterval, negInterval);
+}
+
+std::pair<Var, Var> operator >= (const Var& a, const long long& b)
+{
+	std::pair<Var, Var> eqResult = (a < b);
+	return std::pair<Var, Var>(eqResult.second, eqResult.first);
+}
+
+std::pair<Var, Var> operator <= (const Var& a, const long long& b)
+{
+	Var posInterval, negInterval;
+	if (a.max <= b)
+	{
+		posInterval.limMax = a.limMax;
+		posInterval.limMin = a.limMin;
+		posInterval.max = a.max;
+		posInterval.min = a.min;
+		negInterval.limMax = 0;
+		negInterval.limMin = 0;
+		negInterval.min = 0;
+		negInterval.max = 0;
+	}
+	else if (a.min > b)
+	{
+		negInterval.limMax = a.limMax;
+		negInterval.limMin = a.limMin;
+		negInterval.max = a.max;
+		negInterval.min = a.min;
+		posInterval.limMax = 0;
+		posInterval.limMin = 0;
+		posInterval.min = 0;
+		posInterval.max = 0;
+	}
+	else
+	{
+		posInterval.limMax = a.limMax;
+		posInterval.limMin = a.limMin;
+		posInterval.max = b;
+		posInterval.min = a.min;
+		negInterval.limMax = a.limMax;
+		negInterval.limMin = a.limMin;
+		negInterval.min = b + 1;
+		negInterval.max = a.max;
+	}
+	return std::pair<Var, Var>(posInterval, negInterval);
+}
+
+std::pair<Var, Var> operator > (const Var& a, const long long& b)
+{
+	std::pair<Var, Var> eqResult = (a <= b);
+	return std::pair<Var, Var>(eqResult.second, eqResult.first);
 }
 
 template< class myClass>

@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <fstream>
 #include <string>
+#include <utility>
 
 #include "exprEval.h"
 #include "StringHelper.h"
@@ -15,25 +16,83 @@
 
 namespace Parser
 {
-	
+	const std::string READKEY = "citire";
+	const std::string WRITEKEY = "afisare";
+	const std::string IFCONDITION = "if";
 	std::unordered_set<std::string> keyTypes;
-	std::unordered_map<std::string, Type> typeMap;
+
+
+
+
+	std::unordered_map<std::string, DataType> typeMap;
 	std::unordered_map<std::string, Var> varMap;
 	std::unordered_map<std::string, Array> arrayMap;
 	
 	bool overflow = false;
+
+	void clear()
+	{
+		varMap.clear();
+		arrayMap.clear();
+	}
+
+	std::vector<std::string> readFile(const std::string& fileName)
+	{
+		std::vector<std::string> lines;
+		std::string strLine;
+		std::ifstream fin(fileName);
+
+		while (std::getline(fin, strLine))
+		{
+			lines.push_back(strLine);
+		}
+		return lines;
+	}
+
+
+	void readDataTypes()
+	{
+		std::vector<std::string> lines = readFile("configDataType.txt");
+		DataType auxType;
+		for (size_t i = 0; i < lines.size(); ++i)
+		{
+			std::string line = lines[i];
+			StringHelper::formatStr(line);
+			if (line.empty())
+				continue;
+			std::string nrStr;
+			int pos = 0, lastpos = 0;
+			pos = line.find_first_not_of(" ");
+			lastpos = pos;
+			pos = line.find_first_of(" ", lastpos);
+			auxType.name = line.substr(lastpos, pos - lastpos);
+			lastpos = pos;
+			pos = line.find_first_not_of(" ", lastpos);
+			lastpos = pos;
+			pos = line.find_first_of(" ", lastpos);
+			nrStr = line.substr(lastpos, pos - lastpos);
+			auxType.min = stoll(nrStr);
+			lastpos = pos;
+			pos = line.find_first_not_of(" ", lastpos);
+			lastpos = pos;
+			pos = line.find_first_of(" ", lastpos);
+			if (pos == std::string::npos)
+			{
+				pos = line.size();
+			}
+			nrStr = line.substr(lastpos, pos - lastpos);
+			auxType.max = stoll(nrStr);
+			typeMap[auxType.name] = auxType;
+		}
+	}
 	
 	void init()
 	{
-		Type auxType;
-		auxType.min = -1000;
-		auxType.max = 1000;
-		auxType.name = "int";
-		typeMap["int"] = auxType;
-		keyTypes.emplace("int");
-		auxType.name = "char";
-		typeMap["char"] = auxType;
-		keyTypes.emplace("char");
+		typeMap.clear();
+		varMap.clear();
+		arrayMap.clear();
+		keyTypes.clear();
+		readDataTypes();
 
 	}
 	
@@ -86,7 +145,7 @@ namespace Parser
 
 	
 	//Store initialized and maybe declared variables in a map of variables
-	int parseVarDecl(const Type& varType, const std::string& str, std::unordered_map<std::string, Var>& varMap)
+	int parseVarDecl(const DataType& varType, const std::string& str, std::unordered_map<std::string, Var>& varMap)
 	{
 
 		size_t pos = 0, lastpos = 0;
@@ -371,6 +430,88 @@ namespace Parser
 		return sSUCCESS;
 	}
 
+	int parseVarFunction(const std::string& strLine, std::unordered_map<std::string, Var>& varMap)
+	{
+		size_t pos = 0, lastpos = 0;
+		std::string functionStr, varName;
+		Var auxVar;
+
+		pos = strLine.find_first_of(" ");
+		functionStr = strLine.substr(0, pos);
+		lastpos = pos;
+		pos = strLine.find_first_not_of(" ", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine + " because it doesn't have any variable", sERROR);
+		lastpos = pos;
+		pos = strLine.find_first_of(" ;", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine + " because it doesn't end correctly", sERROR);
+		varName = strLine.substr(lastpos, pos - lastpos);
+		ERRORLOGRETURN(varMap.find(varName) != varMap.end(), "The variable " + varName + " hasn't been initialized", sERROR);
+		auxVar = varMap[varName];
+		pos = strLine.find_first_not_of(" ", pos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine + " because it doesn't end correctly", sERROR);
+		ERRORLOGRETURN(strLine[pos] == ';', "Can't parse " + strLine + " because it doesn't end correctly", sERROR);
+		if (functionStr == READKEY)
+		{
+			auxVar.min = auxVar.limMin;
+			auxVar.max = auxVar.limMax;
+			varMap[varName] = auxVar;
+		}
+		return sSUCCESS;
+	}
+
+	int parseVarCondition(const std::string& strLine, std::unordered_map<std::string, Var>& varMap, int& condCase, std::pair<std::string, std::string>& strPair)
+	{
+		size_t pos = 0, lastpos = 0;
+		std::string varName, opStr, nrStr;
+		Var var;
+		std::pair<Var, Var> branchVars;
+		long long number;
+
+		Var auxVar;
+
+		pos = strLine.find_first_of(" (");
+		lastpos = pos;
+		pos = strLine.find_first_not_of(" ", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine, sERROR);
+		ERRORLOGRETURN(strLine[pos] == '(' , "Can't parse " + strLine + "because it doesn't have ( bracket!", sERROR);
+		lastpos = pos + 1;
+		pos = strLine.find_first_not_of(" ", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine, sERROR);
+		lastpos = pos;
+		pos = strLine.find_first_of(" ><!=", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine + "because it doesn't have a correct operator", sERROR);
+		varName = strLine.substr(lastpos, pos - lastpos);
+		ERRORLOGRETURN(varMap.find(varName) != varMap.end(), "The variable " + varName + " hasn't been initialized", sERROR);
+		var = varMap[varName];
+		lastpos = pos;
+		pos = strLine.find_first_not_of(" ", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine, sERROR);
+		lastpos = pos;
+		pos = strLine.find_first_of(" 123456789", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine, sERROR);
+		opStr = strLine.substr(lastpos, pos - lastpos);
+		ERRORLOGRETURN(StringHelper::isCompOperator(opStr), "Can't parse " + strLine + " because operator is not good", sERROR);
+		lastpos = pos;
+		pos = strLine.find_first_not_of(" ", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine, sERROR);
+		lastpos = pos;
+		pos = strLine.find_first_not_of("0123456789", lastpos);
+		ERRORLOGRETURN(pos != std::string::npos, "Can't parse " + strLine, sERROR);
+		nrStr = strLine.substr(lastpos, pos - lastpos);
+		ERRORLOGRETURN(StringHelper::isNumber(nrStr), "Can't parse " + strLine + " because " + nrStr + " isn't a number", sERROR);
+		number = stoll(nrStr);
+
+		branchVars = Expression::makeCompOp(var, number, opStr);
+		condCase = Expression::whichCondCase(branchVars);
+		strPair.first = StringHelper::rangeToAttributionLine(varName, branchVars.first.min, branchVars.first.max);
+		strPair.second = StringHelper::rangeToAttributionLine(varName, branchVars.second.min, branchVars.second.max);
+
+		std::cout << "a: " << var.min << " " << var.max << '\n';
+
+
+		return sSUCCESS;
+	}
+
 
 	//Verify if the line of code is a declaration line (with or without initialization)
 	bool isDeclarationLine(const std::string& strLine)
@@ -386,7 +527,7 @@ namespace Parser
 	
 		str = strLine.substr(lastpos, pos - lastpos);
 	
-		return (keyTypes.find(str) != keyTypes.end());
+		return (typeMap.find(str) != typeMap.end());
 	}
 	
 	//Verify if the line of code is a line in which we attribute a value to the element
@@ -395,15 +536,64 @@ namespace Parser
 		size_t pos = 0, lastpos = 0;
 		std::string str;
 	
-		pos = strLine.find_first_of("=");
+		pos = strLine.find_first_of(" =");
 		if(pos == std::string::npos)
 		{
 			return false;
 		}
 
-		str = strLine.substr(lastpos, pos - lastpos);
+		lastpos = pos;
+		pos = strLine.find_first_not_of(" ", lastpos);
+		if (strLine[pos] != '=')
+		{
+			return false;
+		}
+
+		str = strLine.substr(0, lastpos);
 	
 		return (varMap.find(str) != varMap.end());
+	}
+
+	bool isFunctionLine(const std::string& strLine)
+	{
+		size_t pos = 0;
+		std::string str;
+
+		pos = strLine.find_first_of(" ");
+
+		if (pos == std::string::npos)
+		{
+			return false;
+		}
+
+		str = strLine.substr(0, pos);
+
+		return (str == READKEY || str == WRITEKEY);
+
+	}
+
+	bool isConditionLine(const std::string& strLine)
+	{
+		size_t pos = 0;
+		std::string str;
+		pos = strLine.find_first_of(" (");
+		if (pos == std::string::npos)
+		{
+			return false;
+		}
+
+		str = strLine.substr(0, pos);
+
+		return (str == IFCONDITION);
+	}
+
+	bool isClosedBracketLine(const std::string& strLine)
+	{
+		if (strLine.size() == 1 && strLine[0] == '}')
+		{
+			return sTRUE;
+		}
+		return sFALSE;
 	}
 
 }

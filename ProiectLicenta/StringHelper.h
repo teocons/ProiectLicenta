@@ -11,6 +11,14 @@
 
 #include "ErrorLog.h"
 
+
+const std::string EQUALSIGN = "==";
+const std::string DIFFERENTSIGN = "!=";
+const std::string LESSSIGN = "<";
+const std::string LESSEQUALSIGN = "<=";
+const std::string GREATERSIGN = ">";
+const std::string GREATEREQUALSIGN = ">=";
+
 namespace StringHelper
 {
 
@@ -87,6 +95,24 @@ namespace StringHelper
 			str.erase(std::remove(str.begin(), str.end(), c), str.end());
 		}
 	}
+
+	void removeCommentFromStr(std::string& str)
+	{
+		size_t pos = str.find("//");
+		if (pos != std::string::npos)
+		{
+			str = str.substr(0, pos);
+		}
+	}
+
+	void formatStr(std::string& str)
+	{
+		removeFromBeginOfStr(str, " ;\r\n");
+		removeCommentFromStr(str);
+		removeFromEndOfStr(str, " \r\n");
+	}
+
+
 	
 	bool isEmptyLine(std::string str)
 	{
@@ -96,7 +122,11 @@ namespace StringHelper
 	
 	bool isNumber(const std::string& str)
 	{
-		for(int i = 0; i < str.size(); ++i)
+		if (!isdigit(str[0]) && str[0] != '-')
+		{
+			return false;
+		}
+		for(int i = 1; i < str.size(); ++i)
 		{
 			if(!isdigit(str[i]))
 			{
@@ -113,6 +143,12 @@ namespace StringHelper
 			return true;
 		}
 		return false;
+	}
+
+	bool isCompOperator(const std::string& str)
+	{
+		return (str == EQUALSIGN || str == DIFFERENTSIGN || str == LESSSIGN || str == LESSEQUALSIGN
+			|| str == GREATERSIGN || str == GREATEREQUALSIGN);
 	}
 	
 	std::string namePartOfArray(const std::string& oldStr)
@@ -172,6 +208,13 @@ namespace StringHelper
 
 		return static_cast<size_t> (std::stoul(numStr));
 
+	}
+
+	std::string rangeToAttributionLine(const std::string& varName, long long minVal, long long maxVal)
+	{
+		std::string retStr;
+		retStr = varName + "=[" + std::to_string(minVal) + "," + std::to_string(maxVal) + "];";
+		return retStr;
 	}
 
 

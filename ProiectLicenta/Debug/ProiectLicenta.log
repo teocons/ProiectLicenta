@@ -1,5 +1,8 @@
 ﻿  ProiectLicenta.cpp
-c:\users\teo\desktop\proiectlicenta\proiectlicenta\stringhelper.h(99): warning C4018: '<': signed/unsigned mismatch
-c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(93): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
-c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(41): warning C4715: 'Expression::applyOp': not all control paths return a value
+c:\users\teo\desktop\proiectlicenta\proiectlicenta\stringhelper.h(129): warning C4018: '<': signed/unsigned mismatch
+c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(178): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
+c:\users\teo\desktop\proiectlicenta\proiectlicenta\proiectlicenta.cpp(42): warning C4018: '<': signed/unsigned mismatch
+c:\users\teo\desktop\proiectlicenta\proiectlicenta\proiectlicenta.cpp(103): warning C4018: '<': signed/unsigned mismatch
+c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(47): warning C4715: 'Expression::applyOperation': not all control paths return a value
+c:\users\teo\desktop\proiectlicenta\proiectlicenta\expreval.h(75): warning C4715: 'Expression::makeCompOp': not all control paths return a value
   ProiectLicenta.vcxproj -> C:\Users\Teo\Desktop\ProiectLicenta\ProiectLicenta\Debug\ProiectLicenta.exe
